@@ -103,6 +103,11 @@ Output of `python3 detector.py | python3 decoder.py | python3 passes.py`:
 Note, it also prints a bell (`\a`) at the beginning of each line.
 Also note, it's using the `select` system call. According to some, it might run into throubles on Windows.
 
+At this point, you can use a text2speech tool like `say` to announce laptimes.
+```
+echo "3616557 17.2" | cut -f2 -d' ' | say
+```
+
 ## Hardware
 
 The transponders are using a BPSK-modulated stream at 1.25 MHz symbol rate on a 5 MHz carrier. A transmission contains an initialization sequence, a preamble and the actual payload. The total lenght of a message is about 100 us. The transmissions are repeating on average of 1.5 ms, with a random jitter added.

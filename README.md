@@ -2,21 +2,22 @@
 
 AMB/RC3-compatible decoder using a `PicoScope 2204A`, a USB-based, inexpensive 8-bit oscilloscope. Using this project, you can create a lap timer for your track for about 200 EUR.
 
-The detection antenna is connected to the AC-coupled input of the oscilloscope. The oscilloscope triggers on the detected wafeforms, and transfers them through USB for PC-based decoding. The BPSK demodulation happens on the raw waveform in software. There are separate scripts for each further processing steps (decoding RC3 protocol, recording passes).
+**How it works?** The detection antenna is connected to the AC-coupled input of the oscilloscope. The oscilloscope triggers on the detected wafeforms, and transfers them through USB for PC-based decoding. The BPSK demodulation happens on the raw waveform in software. There are separate scripts for each further processing steps (decoding RC3 protocol, recording passes).
 
 Consider this project as a proof-of-concept rather than a fully-fledged alternative to other decoders.
 
 ## Quickstart
 
-You need to install the oscilloscope's [PicoSDK](https://www.picotech.com/library/our-oscilloscope-software-development-kit-sdk#sdk_dl) first, available from the manufacturer. It is compatible with x86/x86-64 Linux, Windows and MacOS. There is no support of ARM64 architectures yet (MacOS needs Rosetta, Raspberry PI is not supported).
+You need to install the oscilloscope's [PicoSDK](https://www.picotech.com/library/our-oscilloscope-software-development-kit-sdk#sdk_dl) first. It is available on the manufacturer's website. It is compatible with x86/x86-64 Linux, Windows and MacOS. There is no support of ARM64 architectures yet (MacOS needs Rosetta, Raspberry PI is not supported).
 
-```
+```bash
 pip install picosdk numpy scipy
 python3 detector.py | python3 decoder.py | python3 passes.py 
 ```
 
 You might have to make the SDK available for dynamic loading:
-```
+
+```bash
 export DYLD_LIBRARY_PATH=/Library/Frameworks/PicoSDK.framework/Libraries/libpicoipp/:Library/Frameworks/PicoSDK.framework/Libraries/libps2000/
 ```
 
@@ -24,11 +25,11 @@ Mac M1/M2/etc users should download the x86-64 binaries, and use [miniconda](htt
 
 ## Software
 
-The project contains separate scripts for specific tasks.
+The project is organized into separate scripts for specific tasks.
 
 ### detector.py
 
-PHY-level decoding. Opens the PicoScope and reads a full memory worth of samples (8k) to determine noise floor and potential 0-point bias. Using the data, it sets a positive edge trigger to 3-sigma of the noise, but at least to 3*LSB. On trigger, it reads the sample memory, and does the BPSK decoding.
+Performs PHY-level decoding. It opens the PicoScope, reads a full memory buffer (8k samples) to determine the noise floor and potential DC bias, then sets a positive-edge trigger at 3σ above the noise (at least 3 × LSB). On each trigger it reads the buffer and performs BPSK decoding.
 
 Output of `python3 detector.py`:
 ```
@@ -61,9 +62,9 @@ All the debug info goes to stderr, while the received data goes to stdout. The s
 1758530782.245 14.28 007916E111CD16CBC9A21070C00020
 ```
 
-There is a `range = PS2000_200MV` line somewhere setting the oscilloscope measuring range. `PS2000_200MV` works fine for under-the-track antenna and proper transponder placement (B-field perpendicular to the loop, see [#Hardware] section below). Overhead antennas require `PS2000_50MV`, and might benefit from a preamp as well.
+The oscilloscope input range is set via range = PS2000_200MV. This is suitable for under-track antennas with properly oriented transponders (B-field perpendicular to the loop, see [#Hardware] section below). Overhead antennas require `PS2000_50MV`, and might benefit from a preamp as well.
 
-Note, due to limitations of the hardware (USB2, polling-based datatransfer), we can capture ca 250-300 samples per second only (best-case). The transponder is sending ca 650 tx/s.
+Due to hardware limits (USB2, polling-based transfer), only ~250–300 samples per second can be captured, while the transponder transmits ~650 messages per second.
 
 ### decoder.py
 
@@ -82,9 +83,9 @@ Output of `python3 detector.py | python3 decoder.py`:
 
 #### RC4 support
 
-It's not supported, and it's not a priority to support it. The RC4 protocol is deliberately obfuscated to hinder its' decoding. I think our efforts - as the open source RC community - should not be wasted on decyphering it, but to make it a thing of the past. We should come up with open transponder protocols that make sense. Modern, highly available manufacturing makes it easy even for a solo maker to produce small batches of transponders at very reasonable prices. With and SDR- or PicoScope based decoders, any track and community could afford to have lap counters, and finally true innovation could happen, like:
-* passing speed detection using signal strength or doppler effect
-* sector times (multiple detectors)
+The RC4 protocol is deliberately obfuscated to hinder its' decoding. I think our efforts - as the open source RC community - should not be wasted on decyphering it, but to make it a thing of the past. We should come up with open transponder protocols that make sense. Modern, highly available manufacturing makes it easy even for a solo maker to produce small batches of transponders at very reasonable prices. With and SDR- or PicoScope based decoders, any track and community could afford to have lap counters, and finally true innovation could happen, such as:
+ * Passing speed detection via signal strength or Doppler effect
+ * Sector timing with multiple detectors
 
 ### passes.py
 
@@ -110,7 +111,7 @@ The transponders are using a BPSK-modulated stream at 1.25 MHz symbol rate on a 
 
 There is a widespread misunderstanding in the RC community, so I'd like to clarify this first.
 
-For our ourpose, it is not a loop or the inductor of a resonant circuit. This is a **parallel wire transmission line**, a special form of **waveguide**. Disturbances in the magnetic field perpedicular to the plane of the wires (the transponder's signal) will travel towards *both ends* of the structure in the form of electromagnetic waves. As electrons start moving in the conductors (resulting in AC current), they create an electic field between the wires. This E-field create voltage difference. There is a ratio between the voltage created and electrons moved (current), and this ratio is specific to the geometry of the structure (the distance between the wires). It is called **characteristic impedance**, and is measured in Ohms, similarly to resistance.
+Despite the name, this is not a resonant loop but a **parallel-wire transmission line** (a type of waveguide). Disturbances in the magnetic field perpedicular to the plane of the wires (the transponder's signal) will travel towards *both ends* of the structure in the form of electromagnetic waves. As electrons start moving in the conductors (resulting in AC current), they create an electic field between the wires. This E-field create voltage difference. There is a ratio between the voltage created and electrons moved (current), and this ratio is specific to the geometry of the structure (the distance between the wires). It is called **characteristic impedance**, and is measured in Ohms, similarly to resistance.
 
 The antenna has two ends: the far end is *terminated*, while the other end passes the signal eventually to the oscilloscope. As the electromagnetic waves reach the far end of the loop, they can not travel any further. If we connect the wires together (forming a loop) or leave the ends open (leaving them flapping in the wind), the wave *must* reflects, and travel towards the receiver. At the receiver, the reflected wave is added to the incident wave, potentially cancelling it. To avoid this, we must terminate the line on the far end. Remember, by the end of the day, there is a current wave and a voltage wave. If we place a resistor between the wires, with a value "carefully chosen" to match the volage/current ratio (the characteristic impedance), there will be practically no reflection. We terminated the transmission line.
 
@@ -128,7 +129,7 @@ Search for "NoElec 1:9 HF antenna balun", they cost ca. 3 EUR, and are available
 
 ### Amplifier (optional)
 
-Overhead antenna placement definitely benefit from an LNA placed between the coax line and the balun. I can not recommend one though. Please send a pull request if you can.
+Overhead antenna placement can definitely benefit from an LNA, placed between the coax line and the balun. I can not recommend one though. Please send a pull request if you can.
 
 ### Feed through termination (optional)
 
@@ -138,15 +139,13 @@ Search Ali/Amazon for "P57 50Ohm Feed Through Terminator", this is a 10 EUR prob
 
 ### Size matters
 
-At 5 MHz we are dealing with a wavelength of about 40..50 meters. The shortest distance to get a full cancellation is at quarter-wavelenght, which is 10 meters. At the track, a permanent istallation can easily reach such distances. For testing, we can get away with much less cable though. You can solder a single wire to the center conductor of a BNC connector, and you're good to go.
+At 5 MHz we are dealing with a wavelength of about 40..50 meters. The shortest distance to get a full cancellation is at quarter-wavelenght, which is 10 meters. At the track, a permanent istallation can easily reach such distances. For testing purposes, you can even solder a single wire to the center pin of a BNC connector, and you're good to go.
 
 ## Learnings (so far...)
 
-Firstly, 8-bit is barely enough. The antenna's ability to pick up the transmission is extremely sensitive to distance and transponder placement. A good transponder placement can easily generate 10x the signal than a suboptimal one. Such a difference is already eaten up a good chunk of the dynamic range.
-
-The analog frontend of the scope can get temporarly overwhelmed when seeing a large signal (this is normal btw.). This severly hinders the ability to receive the transmission properly. Some clipping circuit (like at Cano/[RCHourGlass]() design) or a preamp with automatic gain control would come handly.
-
-The trigger-based design (usb-polling) consumes probably more resources than a continous sampling would, while it captures potentially less transmittions. The PicoScope does not support continuous sampling at this rate.
+* **8-bit resolution is barely enough.** Signal strength varies greatly with transponder placement, sometimes by 10×, consuming much of the dynamic range.
+* **Analog frontend overload.** Large signals can temporarily overwhelm the scope (normal behavior), reducing reception quality. Clipping circuits or preamps with automatic gain control would help.
+* **Trigger-based design is limited.** USB polling uses more resources and captures fewer transmissions compared to continuous sampling, which the PicoScope cannot support at this rate.
 
 ## Contribute
 
@@ -160,3 +159,5 @@ I am personally interrested in:
   * gnuradio support
 * JLCPCB-assembled transponder on a panel, using an open proof-of-concept protocol (proposal: max 8 bit init sequence + 8 bit preamble + 24 bit transponder id + 8 bit crc8 + 2 bit trailing sequence).
 * Loop preamplifier with auto-gain control (practically compensating 20-30 dB for various suboptimal transponder placement) and input protection.
+```
+

@@ -120,7 +120,13 @@ Despite the name, this is not a resonant loop but a **parallel-wire transmission
 
 The antenna has two ends: the far end is *terminated*, while the other end passes the signal eventually to the oscilloscope. As the electromagnetic waves reach the far end of the loop, they can not travel any further. If we connect the wires together (forming a loop) or leave the ends open (leaving them flapping in the wind), the wave *must* reflects, and travel towards the receiver. At the receiver, the reflected wave is added to the incident wave, potentially cancelling it. To avoid this, we must terminate the line on the far end. Remember, by the end of the day, there is a current wave and a voltage wave. If we place a resistor between the wires, with a value "carefully chosen" to match the volage/current ratio (the characteristic impedance), there will be practically no reflection. We terminated the transmission line.
 
-The characteristic impedance is [geometry-dependant](https://learnemc.com/ext/calculators/transmission_line/wirepair.html). The wider the wires separation is, the larger the characteristic impedance is. The larger the surface (wire diameneter), the lower the impedance is. While not ideal, some reflection is tolerable, you don't need to be super-exact. For practical purposes (see later), I suggest using around **18 AWG (1 mm diameter) multi-stranded copper wire, 680/750 Ohm resistor and 20 cm spacing**.
+The characteristic impedance is [geometry-dependant](https://learnemc.com/ext/calculators/transmission_line/wirepair.html). The wider the wires separation is, the larger the characteristic impedance is. The larger the surface (wire diameneter), the lower the impedance is. While not ideal, some reflection is tolerable, you don't need to be super-exact.
+
+**Based on my TDR measurements** with 2 mm<sup>2</sup> (14 AWG) *fine-stranded* wire,
+* right over a low-conductivity groudplane (ie. flooring, dry tarmac), use **300..330 ohm termination** and **20..30 cm wire separation**.
+* 30 cm above the aforemention groundplan (overhead configuration) should use **470 ohm and 20..30 cm wire separation**.
+
+See [Time domain reflectometry](https://en.wikipedia.org/wiki/Time-domain_reflectometer) article on the methods used, and the `tdr_measurements` folder for actual results.
 
 ### Impedance transformer (BalUn)
 
@@ -128,7 +134,7 @@ We discussed an impedance mismatch at the far end of the antenna. There is an ot
 1. The parallel wire transmission line has a characteristic impedance around 700 Ohm, while most measurement-purposed coaxial cables have around 50 Ohms. This is quite a mismatch.
 2. Ideally we'd like to have the wires floating relative to the electric ground. The shield of the coaxial cable is ground-referenced though. It's connected to the shield of the USB cable, which is connected to the earthing at the PC end.
 
-To solve both of these problems, we have to place an impedance transformer between the parallel wires and the coaxial cable. Ideally this should have a 14:1 ratio, but such ratio must be custom made. Other, 1:9 transformers are widely available though, thanks to the HAM community. These transformers are called "baluns", as they also act between a balanced (parallel wire) line and an unbalanced line (coaxial cable). While 1:9 ratio creates some reflection, but it is within tolerable limits (see "Size matters" section down below).
+To solve both of these problems, we have to place an impedance transformer between the parallel wires and the coaxial cable. Ideally this should have a 6:1 ratio (ground-level installation) or 10:1 (overhead installation), but such ratios must be custom made. Other, 1:9 transformers are widely available though, thanks to the HAM community. These transformers are called "baluns", as they also act between a balanced (parallel wire) line and an unbalanced line (coaxial cable). While 1:9 ratio creates some reflection, but it is well within the tolerable limits (see "Size matters" section down below).
 
 Search for "NoElec 1:9 HF antenna balun", they cost ca. 3 EUR, and are available from Aliexpress and Amazon.
 
